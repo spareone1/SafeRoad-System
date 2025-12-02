@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  teamroute-server:
+    build: .                # 현재 폴더에 있는 Dockerfile을 보고 빌드함
+    container_name: teamroute-backend
+    ports:
+      - "8080:8080"         # 외부접속포트:내부컨테이너포트
+    environment:
+      - TZ=Asia/Seoul       # 한국 시간대 설정
+      # DB 연결 설정이 있다면 아래 주석을 풀고 내용을 채워넣으세요.
+      # - SPRING_DATASOURCE_URL=jdbc:mysql://db-host:3306/dbname
+      # - SPRING_DATASOURCE_USERNAME=root
+      # - SPRING_DATASOURCE_PASSWORD=password
+    restart: always         # 서버가 죽거나 재부팅되면 자동으로 다시 켬
