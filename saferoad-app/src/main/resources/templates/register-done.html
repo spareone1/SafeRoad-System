@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='회원가입 완료',
+        bodyClass='state-guest page-register-done',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles"></th:block>
+</head>
+
+<body>
+
+<main id="page-content">
+    <section class="container" style="text-align:center; padding:80px 0;">
+        <h2 class="section__title" style="margin-bottom:24px;">회원가입이 완료되었습니다!</h2>
+        <p style="color:#6b7280; font-size:17px; margin-bottom:48px;">
+            이제 SafeRoad의 다양한 기능을 이용해 도로 위험을 함께 줄일 수 있어요.<br />
+            로그인 후 서비스를 이용해 주세요.
+        </p>
+
+        <div style="max-width:640px; margin:0 auto 60px;">
+            <img th:src="@{/img/load_register_done.jpg}" alt="회원가입 완료 축하 이미지" style="width:100%; height:auto; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,0.08);" />
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:16px;">
+            <a th:href="@{/login}" class="btn btn--blue">로그인 하러가기</a>
+            <a th:href="@{/}" class="btn btn--ghost">홈으로 이동</a>
+        </div>
+    </section>
+</main>
+<th:block id="page-scripts">
+</th:block>
+
+</body>
+</html>

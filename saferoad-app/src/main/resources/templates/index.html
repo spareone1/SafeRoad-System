@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='SafeRoad System',
+        bodyClass='home',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <style>
+            body.home {
+                overflow: hidden;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<main id="page-content">
+    <section class="hero" aria-label="소개">
+        <div class="hero__backdrop" aria-hidden="true"></div>
+        <div class="hero__content">
+            <h1 class="hero__title">SafeRoad System</h1>
+            <p class="hero__subtitle">장애물 제보·검수·현황 관리를 하나의 플랫폼으로.</p>
+            <div class="hero__actions">
+                <a th:href="@{/check-map}" class="btn btn--solid">장애물 확인</a>
+                <a th:href="@{/info}" class="btn btn--ghost">시스템 안내</a>
+            </div>
+        </div>
+    </section>
+
+</main>
+<th:block id="page-scripts">
+</th:block>
+
+</body>
+</html>

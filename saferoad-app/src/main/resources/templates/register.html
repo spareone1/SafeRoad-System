@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='회원가입',
+        bodyClass='state-guest',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <style>
+            .error-message {
+                background-color: #fff1f2;
+                border: 1px solid #ffdde0;
+                color: #d9304e;
+                padding: 14px 16px;
+                border-radius: 12px;
+                margin-bottom: 16px;
+                text-align: center;
+                font-weight: 600;
+            }
+            .check-message {
+                font-size: 14px;
+                margin-top: 8px;
+            }
+            .check-message.success {
+                color: green;
+            }
+            .check-message.error {
+                color: red;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<main id="page-content">
+    <section class="container">
+        <h2 class="section__title">회원가입</h2>
+
+        <form class="form card card--pad" id="register-form">
+
+            <div id="error-message-box" class="error-message" hidden></div>
+
+            <div class="field">
+                <label class="label" for="name">이름</label>
+                <input class="input" id="name" name="name" autocomplete="name" required />
+            </div>
+
+            <div class="field">
+                <label class="label" for="userid">아이디</label>
+                <div style="display:grid; grid-template-columns:1fr 160px; gap:10px;">
+                    <input class="input" id="userid" name="userid" autocomplete="username" required />
+                    <button class="btn btn--blue" type="button" id="check-userid-btn">중복 확인</button>
+                </div>
+                <p id="userid-check-msg" class="check-message"></p>
+            </div>
+
+            <div class="field">
+                <label class="label" for="pw1">비밀번호</label>
+                <input class="input" id="pw1" name="password" type="password" autocomplete="new-password" required />
+            </div>
+
+            <div class="field">
+                <label class="label" for="pw2">비밀번호 확인</label>
+                <input class="input" id="pw2" name="passwordConfirm" type="password" autocomplete="new-password" required />
+            </div>
+
+            <label class="checkbox">
+                <input type="checkbox" id="terms" name="terms" required />
+                이용약관에 동의합니다.
+            </label>
+
+            <label class="checkbox">
+                <input type="checkbox" id="privacy" name="privacy" required />
+                개인정보 처리방침에 동의합니다.
+            </label>
+
+            <div class="actions" style="justify-content:center">
+                <button class="btn btn--blue" type="submit">회원가입</button>
+            </div>
+        </form>
+    </section>
+</main>
+
+<th:block id="page-scripts">
+    <script th:inline="javascript">
+        (function () {
+            const checkBtn = document.getElementById('check-userid-btn');
+            const useridInput = document.getElementById('userid');
+            const msgEl = document.getElementById('userid-check-msg');
+
+            const registerForm = document.getElementById('register-form');
+            const errorBox = document.getElementById('error-message-box');
+
+            // --- 중복 확인 버튼 이벤트 ---
+            if (checkBtn) {
+                checkBtn.addEventListener('click', async function() {
+                    const userid = useridInput.value;
+                    if (!userid) {
+                        msgEl.textContent = '아이디를 입력해주세요.';
+                        msgEl.className = 'check-message error';
+                        return;
+                    }
+
+                    try {
+                        // AuthApi의 '/api/auth/check-userid' 호출
+                        const response = await fetch(`/api/auth/check-userid?userid=${userid}`);
+                        const data = await response.json();
+
+                        if (response.ok && data.isAvailable) {
+                            msgEl.textContent = '사용 가능한 아이디입니다.';
+                            msgEl.className = 'check-message success';
+                        } else {
+                            msgEl.textContent = data.message || '이미 사용 중인 아이디입니다.';
+                            msgEl.className = 'check-message error';
+                        }
+                    } catch (error) {
+                        msgEl.textContent = '중복 확인 중 오류가 발생했습니다.';
+                        msgEl.className = 'check-message error';
+                    }
+                });
+            }
+
+            // --- 회원가입 폼 제출 이벤트 ---
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault(); // 기본 폼 전송(새로고침) 방지
+                    errorBox.hidden = true;
+
+                    // 폼 데이터 수집
+                    const name = document.getElementById('name').value;
+                    const userid = document.getElementById('userid').value;
+                    const password = document.getElementById('pw1').value;
+                    const passwordConfirm = document.getElementById('pw2').value;
+                    const terms = document.getElementById('terms').checked;
+                    const privacy = document.getElementById('privacy').checked;
+
+                    // 클라이언트 사이드 유효성 검사
+                    if (password !== passwordConfirm) {
+                        errorBox.textContent = '비밀번호가 일치하지 않습니다.';
+                        errorBox.hidden = false;
+                        return;
+                    }
+                    if (!terms || !privacy) {
+                        errorBox.textContent = '필수 약관에 동의해주세요.';
+                        errorBox.hidden = false;
+                        return;
+                    }
+
+                    try {
+                        // AuthApi의 '/api/auth/register' 호출
+                        const response = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            // UserRequestDTO(Java)와 필드 이름이 같아야 함
+                            body: JSON.stringify({
+                                name: name,
+                                userid: userid,
+                                password: password,
+                                passwordConfirm: passwordConfirm,
+                                terms: terms,
+                                privacy: privacy
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            // 성공 시 완료 페이지로 이동
+                            window.location.href = '/register-done';
+                        } else {
+                            // 실패 시 (API가 보낸 에러 메시지 표시)
+                            errorBox.textContent = data.message || '회원가입에 실패했습니다.';
+                            errorBox.hidden = false;
+                        }
+
+                    } catch (error) {
+                        // 네트워크 오류 등
+                        errorBox.textContent = '회원가입 요청 중 오류가 발생했습니다.';
+                        errorBox.hidden = false;
+                    }
+                });
+            }
+        })();
+    </script>
+</th:block>
+
+</body>
+</html>

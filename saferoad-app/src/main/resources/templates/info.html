@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='SafeRoad 안내',
+        bodyClass='state-guest page-info gradient-background',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: { sans: ['Pretendard', 'sans-serif'] },
+                    },
+                },
+            }
+        </script>
+
+        <style>
+            #page-content {
+                font-family: 'Pretendard', sans-serif;
+            }
+
+            .gradient-background {
+                background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 30%, #ffffff 100%);
+            }
+            .image-elevated-effect {
+                position: relative;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                            0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                            0 20px 40px -10px rgba(0, 0, 0, 0.15);
+                z-index: 1;
+                border: 3px solid rgba(255, 255, 255, 0.9);
+                background-color: white;
+                transition: box-shadow 0.3s ease-out;
+            }
+            .image-elevated-effect:hover {
+                box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.12),
+                            0 6px 8px -2px rgba(0, 0, 0, 0.07),
+                            0 25px 50px -12px rgba(0, 0, 0, 0.2);
+                z-index: 2;
+            }
+            .hero-gap { row-gap: 3rem; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<main id="page-content">
+    <section class="container hero-wrap mx-auto px-4 py-12 md:py-20">
+        <div class="info-panel bg-white/90 backdrop-blur-md p-12 md:p-16 rounded-2xl shadow-xl max-w-6xl mx-auto">
+            <div class="info-panel__body">
+                <h2 class="section__title section__title--loose text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
+                    SafeRoad 서비스 안내
+                </h2>
+
+                <div class="hero-grid hero-gap grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-16">
+                    <div class="visual-card">
+                        <div class="visual-inner rounded-xl overflow-hidden image-elevated-effect">
+                            <img class="visual-img w-full h-64 md:h-80 object-cover"
+                                 th:src="@{/img/porthole_info.jpg}"
+                                 alt="도로 포트홀 이미지" />
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="hero-title text-2xl md:text-3xl font-semibold text-gray-900 mb-4">도로 위 위험 요소, 즉시 발견</h3>
+                        <p class="hero-desc text-base md:text-lg text-gray-600 leading-relaxed md:columns-2 md:gap-6">
+                            최근 잦은 기후 변화로 인해 도로 파손이 급증하고 있습니다. 특히 포트홀은 야간이나 우천 시 운전자의 시야를 방해하여 큰 사고로 이어질 수 있는 ‘도로 위의 지뢰’입니다.
+                            <br><br>
+                            SafeRoad 시스템은 AI 기반 영상 분석으로 위험 요소를 사전에 감지하고, 수집된 정보는 중앙 서버로 전송되어 관할 부서와 운전자가 즉시 대응할 수 있도록 지원합니다.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="hero-grid grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-20">
+                    <div class="order-2 md:order-1">
+                        <h3 class="hero-title hero-title--sub text-2xl md:text-3xl font-semibold text-gray-900 mb-4">현장 대응은 명확하게, 절차는 간단하게</h3>
+                        <p class="hero-desc text-base md:text-lg text-gray-600 leading-relaxed md:columns-2 md:gap-6">
+                            위험도·위치·유형을 자동 분류하여 담당자에게 최적의 작업 순서를 제안합니다.
+                            <br><br>
+                            출동 전 이미지로 상황을 파악하고, 직관적인 검토/승인 흐름으로 조치 시간을 단축합니다.
+                        </p>
+                    </div>
+                    <div class="visual-card order-1 md:order-2">
+                        <div class="visual-inner rounded-xl overflow-hidden image-elevated-effect">
+                            <img class="visual-img w-full h-64 md:h-80 object-cover"
+                                 th:src="@{/img/load.jpg}"
+                                 alt="도로 작업 현장 이미지" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-12 md:my-16 border-t-2 border-gray-300 border-dashed" />
+
+                <h3 class="text-3xl font-bold text-center text-gray-800 mb-12">SafeRoad, 스마트 도시의 미래를 열다</h3>
+
+                <div class="hero-grid grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+                    <div class="order-2 md:order-1">
+                        <h4 class="text-2xl font-semibold text-gray-900 mb-5 tracking-[-0.01em]">시민 참여형 데이터 순환</h4>
+
+                        <p class="hero-desc text-[17px] md:text-[18px] text-gray-700 leading-[1.9] md:columns-2 md:gap-x-10 tracking-[-0.005em] [text-wrap:balance]">
+                            “이제는 도로 위 문제를 발견해도 막막하지 않아요.”
+                            부산 시민 박지연 씨는 최근 SafeRoad 앱을 통해 포트홀을 신고한 경험을 이렇게 전했습니다.
+                            사진 한 장만 등록하면 신고가 접수되고, 며칠 뒤 해당 구간이 복구되었다는 알림을 받았다고 합니다.
+                            <br><br>
+                            현장 담당자 김민수 주무관은 “시민들이 직접 올려주는 정보 덕분에 출동 위치를 정확히 파악할 수 있고,
+                            우선순위를 정하는 데 도움이 된다”며 “예전보다 복구 속도가 훨씬 빨라졌다”고 말했습니다.
+                            <br><br>
+                            SafeRoad는 기술보다 사람을 중심에 둡니다.
+                            누군가의 신고가 또 다른 사람의 안전을 지키는 연결 고리가 되고,
+                            시민과 행정이 함께 움직일 때 도시는 더 안전해집니다.
+                            이 작은 참여가 결국 모두의 길을 지켜주는 큰 변화로 이어집니다.
+                        </p>
+
+                        <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="rounded-lg border border-gray-200 p-5 bg-white/70">
+                                <p class="text-sm text-gray-500 mb-2">핵심 목표</p>
+                                <ul class="list-disc list-inside text-[15px] md:text-[16px] text-gray-800 leading-[1.75]">
+                                    <li>포트홀 및 장애물 탐지</li>
+                                    <li>안전한 도로 구축</li>
+                                    <li>AI를 이용한 안전한 생활 구축</li>
+                                </ul>
+                            </div>
+                            <div class="rounded-lg border border-gray-200 p-5 bg-white/70">
+                                <p class="text-sm text-gray-500 mb-2">지원하는 서비스</p>
+                                <ul class="list-disc list-inside text-[15px] md:text-[16px] text-gray-800 leading-[1.75]">
+                                    <li>장애물 탐지</li>
+                                    <li>장애물 처리</li>
+                                    <li>실시간 도로위 장애물 현황</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="visual-card order-1 md:order-2">
+                        <div class="visual-inner visual-inner--tall rounded-xl overflow-hidden image-elevated-effect md:w-11/12 ml-auto">
+                            <img class="visual-img w-full"
+                                 th:src="@{/img/load2.jpg}"
+                                 alt="스마트 도시 인프라 관련 도로 이미지" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-16 pt-8 text-left border-t border-gray-200">
+                    <a th:href="@{/login}"
+                       class="inline-block bg-blue-600 text-white font-bold text-base px-8 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300 transform hover:scale-105">
+                        지금 시작하기
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</main>
+
+<th:block id="page-scripts"></th:block>
+
+</body>
+</html>

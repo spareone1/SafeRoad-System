@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>회원 탈퇴 확인</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}" />
+
+    <style>
+        body { margin:0; background:#f7f7fb; display:grid; place-items:center; height:100vh; }
+        .popup-card { width:min(420px, 92vw); box-shadow: var(--shadow); }
+        .actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+        .btn--danger { background: var(--c-red); border-color: var(--c-red); color:#fff; }
+    </style>
+</head>
+
+<body>
+<div class="card card--pad popup-card" role="dialog" aria-labelledby="wd-title" aria-describedby="wd-desc">
+    <h3 id="wd-title" style="margin:0 0 8px;">SafeRoad 회원 탈퇴 확인</h3>
+    <p id="wd-desc" style="margin:0 0 6px; font-size:18px;">정말로 회원 탈퇴를 진행하시겠습니까?</p>
+    <div style="font-size:14px; color:#475569; margin-bottom:12px;">
+        탈퇴 시 이용 중인 서비스와 신고 이력이 모두 삭제되며 복구할 수 없습니다.
+    </div>
+    <div class="actions">
+        <a class="btn" th:href="@{/mypage}">취소</a>
+        <a class="btn btn--danger" th:href="@{/withdraw/proceed}">탈퇴 진행</a>
+    </div>
+</div>
+</body>
+</html>

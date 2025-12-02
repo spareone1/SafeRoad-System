@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='SafeRoad - 장애물 목록',
+        bodyClass='state-guest page-check-list bg-gradient-to-br from-white to-sky-50',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: { sans: ['Pretendard', 'sans-serif'] },
+                    },
+                },
+            }
+        </script>
+        <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+
+        <style>
+            #page-content { font-family: 'Pretendard', sans-serif; }
+            .page-check-list { min-height: 100vh; }
+            #modal-map-view { width: 100%; height: 250px; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<div id="page-content">
+    <main>
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-10 text-center sm:text-left">
+                장애물 목록
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover scale-110"
+                             th:src="@{/img/pothole.png}"
+                             alt="도로 파손(포트홀)"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">도로 파손(포트홀)</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            차량 타이어와 서스펜션 파손 위험이 크며, 즉시 피해 안내와 신속한 보수가 필요합니다.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover"
+                             th:src="@{/img/stone.png}"
+                             alt="암석 및 낙석"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">암석·낙석</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            차로 위 고형 물체는 충돌 사고로 이어질 수 있어 즉각적인 제거가 요구됩니다.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover"
+                             th:src="@{/img/sign.png}"
+                             alt="파손된 도로 표지판"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">표지판</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            차로 접근 시 시야를 가리거나 방향 안내를 방해하여 2차 사고 위험이 있으니 즉시 복구해야 합니다.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover"
+                             th:src="@{/img/box.png}"
+                             alt="적재물 박스"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">박스</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            차로 중앙에 떨어진 적재물은 후속 차량의 주행을 방해하므로 빠른 수거가 필요합니다.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover"
+                             th:src="@{/img/garbagBag.png}"
+                             alt="도로 위 쓰레기 봉투"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">쓰레기 봉투</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            차로와 갓길에 방치된 쓰레기는 미끄럼과 시야 방해를 유발할 수 있으므로 즉시 처리합니다.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="h-48 w-full overflow-hidden">
+                        <img class="w-full h-full object-cover"
+                             th:src="@{/img/Labacon.png}"
+                             alt="안전 콘"
+                             onerror="this.src='https://placehold.co/600x400?text=이미지+없음'" />
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">꼬깔콘</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            설치 위치가 맞지 않으면 차선 침범과 정체를 유발하므로 현장 상태에 맞게 정비해야 합니다.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20" aria-label="장애물 표 목록">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800">장애물 상세 목록</h3>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse table--oblist">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">사진</th>
+                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">장애물 이름</th>
+                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">방치된 주소</th>
+                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">발견된 시각</th>
+                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">처리상태</th>
+                        </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="group : ${obstacleGroups}"
+                            th:with="firstObstacle = ${group.obstacles.size() > 0} ? ${group.obstacles[0]} : null"
+                            th:attr="data-obstacle-id=${group.id}"
+                            class="hover:bg-gray-50 cursor-pointer transition-colors"
+                            tabindex="0">
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 relative">
+                                    <img th:src="${firstObstacle != null} ? 'http://alalstkdl123.cafe24.com:15531/' + ${firstObstacle.imageloc} : @{/img/pothole.png}"
+                                         class="w-full h-full object-cover"
+                                         alt="썸네일"
+                                         onerror="this.src='https://placehold.co/100x100?text=No+Img'" />
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                <span th:text="${firstObstacle != null} ? ${firstObstacle.obstacleName} : '(알 수 없음)'">이름</span>
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-gray-500" th:text="${group.location}">주소</td>
+
+                            <td class="px-6 py-4 text-sm text-gray-500"
+                                th:text="${firstObstacle != null ? #temporals.format(firstObstacle.created_at, 'yyyy-MM-dd HH:mm') : '-'}">
+                                시각
+                            </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                    <span th:switch="${group.state.name()}"
+                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                          th:classappend="${group.state.name() == 'completed' ? 'bg-green-100 text-green-800' : (group.state.name() == 'processing' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')}">
+                                        <span th:case="'completed'">처리 완료</span>
+                                        <span th:case="'processing'">처리 중</span>
+                                        <span th:case="*">처리 미완료</span>
+                                    </span>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(obstacleGroups)}">
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                등록된 장애물 그룹이 없습니다.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-center"
+                     th:if="${pagingResult != null && pagingResult.totalPages > 0}">
+                    <nav class="flex gap-2">
+                        <a th:href="@{/check-list(page=${pagingResult.number - 1})}"
+                           th:classappend="${pagingResult.first} ? 'pointer-events-none opacity-50' : ''"
+                           class="px-3 py-1 border rounded text-gray-500 hover:bg-gray-50 transition-colors"
+                           aria-label="이전 페이지">&lt;</a>
+
+                        <th:block th:each="pageNumber : ${#numbers.sequence(
+                                            T(java.lang.Math).max(0, pagingResult.number - 2),
+                                            T(java.lang.Math).min(pagingResult.totalPages - 1, pagingResult.number + 2)
+                                          )}">
+                            <a th:href="@{/check-list(page=${pageNumber})}"
+                               th:text="${pageNumber + 1}"
+                               th:classappend="${pageNumber == pagingResult.number}
+                                               ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                               : 'text-gray-500 hover:bg-gray-50 border-gray-200'"
+                               class="px-3 py-1 border rounded transition-colors">
+                            </a>
+                        </th:block>
+
+                        <a th:href="@{/check-list(page=${pagingResult.number + 1})}"
+                           th:classappend="${pagingResult.last} ? 'pointer-events-none opacity-50' : ''"
+                           class="px-3 py-1 border rounded text-gray-500 hover:bg-gray-50 transition-colors"
+                           aria-label="다음 페이지">&gt;</a>
+                    </nav>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="fixed inset-0 z-[9999] overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" data-modal>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl" data-modal-card>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function () {
+            const tbody = document.querySelector('.table--oblist tbody');
+            const backdrop = document.querySelector('[data-modal]');
+            const cardHost = document.querySelector('[data-modal-card]');
+
+            if (!tbody || !backdrop || !cardHost) return;
+
+            let lastFocused = null;
+            let mapInstance = null;
+
+            async function openDetailModal(obstacleId) {
+                lastFocused = document.activeElement;
+
+                cardHost.innerHTML = `
+                    <div class="p-10 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
+                        <p class="mt-4 text-gray-500">상세 정보를 불러오는 중...</p>
+                    </div>`;
+                backdrop.classList.remove('hidden');
+
+                try {
+                    const response = await fetch(`/api/obstacle-group/${obstacleId}`);
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            alert('로그인이 필요합니다.');
+                            window.location.href = '/login';
+                            return;
+                        }
+                        throw new Error(response.status === 404 ? '데이터를 찾을 수 없습니다.' : '오류가 발생했습니다.');
+                    }
+                    const data = await response.json();
+
+                    renderModalContent(data);
+                    guardAdminFeatures();
+                    bindModalInteractions(obstacleId);
+
+                    document.body.classList.add('overflow-hidden');
+                    const focusTarget = cardHost.querySelector('button, input, select, a');
+                    if(focusTarget) focusTarget.focus();
+
+                    const defaultLat = 35.179554;
+                    const defaultLon = 129.075642;
+
+                    if (data.obstacles && data.obstacles.length > 0) {
+                        const firstObstacle = data.obstacles[0];
+                        initNaverMap(firstObstacle.lat, firstObstacle.lon);
+                    } else {
+                        initNaverMap(defaultLat, defaultLon);
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    cardHost.innerHTML = `
+                        <div class="p-6 text-center">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900">오류 발생</h3>
+                            <p class="mt-2 text-sm text-gray-500">${error.message}</p>
+                            <div class="mt-6">
+                                <button type="button" class="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" data-modal-close>닫기</button>
+                            </div>
+                        </div>`;
+
+                    const closer = cardHost.querySelector('[data-modal-close]');
+                    if(closer) closer.addEventListener('click', closeDetailModal);
+                }
+            }
+
+            function renderModalContent(data) {
+                const firstObstacle = (data.obstacles && data.obstacles.length > 0) ? data.obstacles[0] : null;
+                const state = data.state;
+                const imageUrl = firstObstacle ? 'http://alalstkdl123.cafe24.com:15531/' + firstObstacle.imageloc : '/img/pothole.png';
+                const obstacleName = firstObstacle ? firstObstacle.obstacleName : '정보 없음';
+                const createdAt = firstObstacle ? new Date(firstObstacle.created_at || firstObstacle.createdAt).toLocaleString('ko-KR') : '정보 없음';
+
+                const stateOpt = (val) => state === val ? 'selected' : '';
+                let badgeClass = 'bg-gray-100 text-gray-800';
+                let badgeText = '처리 미완료';
+
+                if (state === 'completed') { badgeClass = 'bg-green-100 text-green-800'; badgeText = '처리 완료'; }
+                else if (state === 'processing') { badgeClass = 'bg-yellow-100 text-yellow-800'; badgeText = '처리 중'; }
+                else { badgeClass = 'bg-red-100 text-red-800'; badgeText = '처리 미완료'; }
+
+                cardHost.innerHTML = `
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">${obstacleName}</h3>
+                            <p class="text-sm text-gray-500">ID: ${data.id} | ${createdAt}</p>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" data-modal-close>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <div class="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900">위치 정보</h4>
+                            <p class="mt-1 text-sm text-gray-600 bg-gray-50 p-3 rounded-md border border-gray-200">${data.location}</p>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4" data-admin-feature style="display:none;">
+                            <label for="status" class="block text-sm font-medium text-gray-700">처리 상태 변경 (관리자)</label>
+                            <select id="status" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm border">
+                                <option value="non_processed" ${stateOpt('non_processed')}>처리 미완료</option>
+                                <option value="processing" ${stateOpt('processing')}>처리 중</option>
+                                <option value="completed" ${stateOpt('completed')}>처리 완료</option>
+                            </select>
+                        </div>
+                        <div data-user-view>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">처리 상태</h4>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">지도 보기</h4>
+                            <div id="modal-map-view"></div>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">현장 사진</h4>
+                            <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                                <img src="${imageUrl}" class="w-full h-64 object-contain mx-auto" onerror="this.src='https://placehold.co/600x400?text=이미지+없음'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 flex flex-row-reverse gap-3 border-t border-gray-200">
+                        <button type="button" class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto sm:text-sm" data-save-btn data-admin-feature style="display:none;">변경 사항 저장</button>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm" data-modal-close>닫기</button>
+                    </div>
+                `;
+            }
+
+            function initNaverMap(lat, lon) {
+                const mapEl = document.getElementById('modal-map-view');
+                if (typeof naver === 'undefined' || !naver.maps) {
+                    if (mapEl) mapEl.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400 text-sm">네이버 지도 API가 로드되지 않았습니다.</div>';
+                    return;
+                }
+                try {
+                    const pos = new naver.maps.LatLng(lat || 35.179554, lon || 129.075642);
+                    mapInstance = new naver.maps.Map(mapEl, { center: pos, zoom: 17, zoomControl: true, zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT } });
+                    new naver.maps.Marker({ position: pos, map: mapInstance });
+                } catch (e) {
+                    console.error("Map Init Error:", e);
+                    if (mapEl) mapEl.innerText = '지도 오류 발생';
+                }
+            }
+
+            function closeDetailModal() {
+                backdrop.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                if (mapInstance) { mapInstance.destroy(); mapInstance = null; }
+                setTimeout(() => { cardHost.innerHTML = ''; if(lastFocused) lastFocused.focus(); }, 100);
+            }
+
+            function guardAdminFeatures() {
+                const isAdmin = document.body.classList.contains('state-admin');
+                const adminEls = cardHost.querySelectorAll('[data-admin-feature]');
+                const userEls = cardHost.querySelectorAll('[data-user-view]');
+                adminEls.forEach(el => el.style.display = isAdmin ? '' : 'none');
+                userEls.forEach(el => el.style.display = isAdmin ? 'none' : '');
+            }
+
+            function bindModalInteractions(obstacleId) {
+                const closers = cardHost.querySelectorAll('[data-modal-close]');
+                closers.forEach(el => el.addEventListener('click', (e) => { e.preventDefault(); closeDetailModal(); }));
+
+                const bgOverlay = backdrop.querySelector('[aria-hidden="true"]');
+                if(bgOverlay) bgOverlay.addEventListener('click', closeDetailModal);
+
+                const onEsc = (e) => { if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) { closeDetailModal(); window.removeEventListener('keydown', onEsc); } };
+                window.addEventListener('keydown', onEsc);
+
+                const saveBtn = cardHost.querySelector('[data-save-btn]');
+                const isAdmin = document.body.classList.contains('state-admin');
+                if (saveBtn && obstacleId && isAdmin) {
+                    saveBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        const newState = cardHost.querySelector('#status').value;
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = '저장 중...';
+                        try {
+                            const res = await fetch(`/api/obstacle-group/${obstacleId}/state`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ state: newState })
+                            });
+                            if (res.ok) { alert('저장되었습니다.'); closeDetailModal(); location.reload(); }
+                            else { const err = await res.json(); alert(`실패: ${err.message}`); }
+                        } catch (e) { alert('오류 발생'); }
+                        finally { saveBtn.disabled = false; saveBtn.textContent = '변경 사항 저장'; }
+                    });
+                }
+            }
+
+            if (tbody) {
+                tbody.addEventListener('click', (e) => {
+                    const row = e.target.closest('tr[data-obstacle-id]');
+                    if (row) openDetailModal(row.getAttribute('data-obstacle-id'));
+                });
+                tbody.addEventListener('keydown', (e) => {
+                    const row = e.target.closest('tr[data-obstacle-id]');
+                    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetailModal(row.getAttribute('data-obstacle-id')); }
+                });
+            }
+        })();
+        /*]]>*/
+    </script>
+</th:block>
+
+</body>
+</html>

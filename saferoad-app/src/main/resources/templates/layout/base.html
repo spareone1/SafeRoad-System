@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(pageTitle, bodyClass, content, styles, scripts)"
+      th:with="bodyClass=${bodyClass} ?: ''">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${pageTitle}">SafeRoad System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}" />
+    <meta name="color-scheme" content="light only" />
+    <th:block th:replace="${styles}"></th:block>
+    <script type="text/javascript"
+            src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=[API_key]&submodules=geocoder"></script>
+</head>
+
+<body th:class="${bodyClass} + ' state-guest'">
+
+<header class="navbar" role="banner">
+    <div class="navbar__inner">
+        <nav class="nav-left" aria-label="주요 메뉴">
+            <ul class="menu">
+                <li class="menu__item"><a th:href="@{/info}" class="menu__link">SafeRoad 안내</a></li>
+                <li class="menu__item menu__item--has-dropdown">
+                    <a href="#" class="menu__link" aria-haspopup="true" aria-expanded="false">장애물 보기</a>
+                    <ul class="dropdown" aria-label="장애물 보기 하위 메뉴">
+                        <li><a th:href="@{/check-map}" class="dropdown__link">지도 보기</a></li>
+                        <li><a th:href="@{/check-list}" class="dropdown__link">목록 보기</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="brand" aria-label="SafeRoad 홈으로">
+            <a class="brand__link" th:href="@{/}"><span class="brand__logo">SafeRoad</span></a>
+        </div>
+
+        <nav class="nav-right" aria-label="사용자 메뉴">
+            <div class="show-guest">
+                <a class="menu__link" th:href="@{/login}">로그인</a>
+                <a class="menu__link btn--primary" th:href="@{/register}">회원가입</a>
+            </div>
+
+            <div class="show-user">
+                <a class="menu__link js-logout" href="#">로그아웃</a>
+                <a class="menu__link btn--primary" th:href="@{/mypage}">마이페이지</a>
+            </div>
+
+            <div class="show-admin">
+                <div class="menu__item menu__item--has-dropdown">
+                    <a href="#" class="menu__link" aria-haspopup="true" aria-expanded="false">관리자</a>
+                    <ul class="dropdown dropdown--right" aria-label="관리자 하위 메뉴">
+                        <li><a th:href="@{/admin}" class="dropdown__link">장애물 처리</a></li>
+                        <li><a th:href="@{/dashboard}" class="dropdown__link">대시보드</a></li>
+                        <li><a th:href="@{/mypage}" class="dropdown__link">마이페이지</a></li>
+                    </ul>
+                </div>
+                <a class="menu__link js-logout" href="#">로그아웃</a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<th:block th:replace="${content}"></th:block>
+
+<footer class="site-footer" th:if="${bodyClass != 'home'}">
+    <div class="container">© 2025 SafeRoad</div>
+</footer>
+
+<th:block th:replace="${scripts}"></th:block>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    (function () {
+        const body = document.body;
+        const role = localStorage.getItem('userRole');
+        const userName = localStorage.getItem('userName');
+
+        // --- 헤더 상태 관리 (원본과 동일) ---
+        if (role) {
+            body.classList.remove('state-guest');
+            if (role.includes('ROLE_ADMIN')) {
+                body.classList.add('state-admin');
+            } else {
+                body.classList.add('state-user');
+            }
+        } else {
+            body.classList.remove('state-user', 'state-admin');
+            body.classList.add('state-guest');
+        }
+
+        const nameDisplay = document.getElementById('user-name-display');
+        if (nameDisplay && userName) {
+            nameDisplay.textContent = userName;
+        }
+
+        // --- 로그아웃 이벤트 바인딩 ---
+
+        // '.js-logout' 클래스를 가진 링크만 정확히 선택
+        const logoutLinks = document.querySelectorAll('.js-logout');
+
+        if (logoutLinks.length > 0) {
+            const handleLogout = async function (e) {
+                e.preventDefault();
+
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST'
+                    });
+                } catch (error) {
+                    console.error("Logout API failed:", error);
+                }
+
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userRole');
+
+                window.location.href = '/';
+            };
+
+            logoutLinks.forEach(link => link.addEventListener('click', handleLogout));
+        }
+    })();
+</script>
+
+</body>
+</html>

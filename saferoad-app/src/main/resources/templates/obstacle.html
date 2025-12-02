@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>장애물 상세보기</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}" />
+
+    <style>
+        html, body { height: 100%; margin: 0; }
+        body {
+            background: #f6f7fb;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+        .modal-card {
+            width: min(640px, 92vw);
+            height: 94svh;
+            background: #fff;
+            border-radius: 20px;
+            border: 1px solid var(--c-border);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        /* (이하 스타일 생략) */
+        .title-wrap { margin-bottom: 12px; }
+        .title-wrap h2 { margin: 0; font-size: 22px; }
+        .title-wrap p { margin: 4px 0 0; color: var(--c-muted); font-size: 14px; }
+        .addr { margin: 8px 0 12px; color: #4b5563; font-size: 14px; }
+        .field { display: grid; gap: 6px; margin-bottom: 12px; }
+        .select { height: 46px; border-radius: 12px; }
+        .mapbox,
+        .upload {
+            flex: 1;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            background: #f1f5ff;
+            display: grid;
+            place-items: center;
+            color: #667085;
+            font-size: 14px;
+            text-align: center;
+            padding: 12px;
+        }
+        .mapbox {
+            border: 1px solid var(--c-border);
+            background: #e7eeff;
+            margin-bottom: 12px;
+        }
+        .upload img { max-width: 100%; max-height: 100%; border-radius: 8px; object-fit: cover; }
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .btn--danger {
+            background: var(--c-red);
+            border-color: var(--c-red);
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+<div class="modal-card" role="dialog" aria-labelledby="m-title" aria-describedby="m-desc">
+    <div class="title-wrap">
+        <h2 id="m-title">장애물 정보</h2>
+        <p id="m-desc">신고 일시 2025-10-14 09:32 · 최종 업데이트 2025-10-15 14:05</p>
+    </div>
+
+    <p class="addr">부산광역시 해운대구 중동로 45 (위도 35.136, 경도 129.100)</p>
+
+    <div class="field">
+        <label for="status">처리 상태</label>
+        <select id="status" class="select">
+            <option value="done" selected>처리 완료</option>
+            <option value="progress">처리 중</option>
+            <option value="pending">처리 미완료</option>
+        </select>
+    </div>
+
+    <div class="mapbox">
+        지도 미리보기 영역입니다. 실제 서비스에서는 지도 SDK가 표시됩니다.
+    </div>
+
+    <div class="upload">
+        <img th:src="@{/assets/pothole.png}" alt="도로 물체 사진" />
+    </div>
+
+    <div class="footer">
+        <a class="btn btn--ghost" th:href="@{/admin}">닫기</a>
+        <button class="btn btn--solid" type="button">변경 사항 저장</button>
+        <button class="btn btn--danger" type="button">신고 반려</button>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='대시보드',
+        bodyClass='state-admin',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <link rel="stylesheet" th:href="@{/css/style.css}" />
+        <style>
+            /* 차트 애니메이션 */
+            .series { transition: all 0.5s ease; }
+            .area { transition: all 0.5s ease; }
+            .dots circle { transition: all 0.5s ease; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<main id="page-content" class="dashboard">
+    <header class="dash-header">
+        <div>
+            <h1>대시보드</h1>
+            <p>최근 탐지 현황과 미확인 장애물 상태를 한눈에 확인합니다.</p>
+        </div>
+    </header>
+
+    <section class="kpi-grid-two">
+        <article class="kpi kpi--xl">
+            <div class="kpi__icon kpi__icon--blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 12h18v2H3zM3 7h18v2H3zM3 17h18v2H3z"/></svg>
+            </div>
+            <div class="kpi__meta">
+                <p class="kpi__label">오늘 탐지된 장애물 수</p>
+                <p class="kpi__value kpi__value--xl"><b id="kpi-today">0</b></p>
+                <p class="kpi__hint">금일 00:00 ~ 현재</p>
+            </div>
+        </article>
+
+        <article class="kpi kpi--xl">
+            <div class="kpi__icon kpi__icon--amber" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1Zm1 6h-2v6l5 3 .9-1.45L13 12.8Z"/></svg>
+            </div>
+            <div class="kpi__meta">
+                <p class="kpi__label">미확인 장애물</p>
+                <p class="kpi__value kpi__value--xl"><b id="kpi-unprocessed">0</b></p>
+                <p class="kpi__hint">확인 및 처리 대기 중</p>
+            </div>
+        </article>
+    </section>
+
+    <div class="dash-grid">
+        <section class="dash-card" aria-labelledby="top10-title">
+            <header class="card__header">
+                <h2 id="top10-title">위험 장애물 Top 10</h2>
+            </header>
+            <ol class="top10-list pro" id="top10-list">
+                <li style="text-align:center; color:#999; padding:20px;">데이터 로딩 중...</li>
+            </ol>
+        </section>
+
+        <section class="dash-card" aria-labelledby="daily-chart-title">
+            <header class="card__header">
+                <h2 id="daily-chart-title">탐지 현황 (일별)</h2>
+            </header>
+            <div class="chart-frame">
+                <figure class="mini-linechart pro" role="img" aria-label="최근 30일 탐지 건수 추세">
+                    <svg viewBox="0 0 760 300" preserveAspectRatio="none">
+                        <rect x="0" y="0" width="760" height="300" class="chart-bg"></rect>
+
+                        <g class="grid">
+                            <line x1="56" y1="244" x2="720" y2="244"></line>
+                            <line x1="56" y1="208" x2="720" y2="208"></line>
+                            <line x1="56" y1="172" x2="720" y2="172"></line>
+                            <line x1="56" y1="136" x2="720" y2="136"></line>
+                            <line x1="56" y1="100" x2="720" y2="100"></line>
+                            <line x1="56" y1="64"  x2="720" y2="64"></line>
+                            <line x1="56" y1="280" x2="720" y2="280" class="axis"></line>
+                            <line x1="56" y1="36"  x2="56"  y2="280" class="axis"></line>
+                        </g>
+
+                        <g class="ylabels">
+                            <text x="16" y="248">0</text>
+                            <text x="16" y="212">5</text>
+                            <text x="16" y="176">10</text>
+                            <text x="16" y="140">15</text>
+                            <text x="16" y="104">20</text>
+                            <text x="16" y="68">25</text>
+                        </g>
+                        <g class="xlabels">
+                            <text x="56"  y="296">1</text>
+                            <text x="152" y="296">5</text>
+                            <text x="248" y="296">10</text>
+                            <text x="344" y="296">15</text>
+                            <text x="440" y="296">20</text>
+                            <text x="536" y="296">25</text>
+                            <text x="672" y="296">30</text>
+                        </g>
+
+                        <path id="chart-area" class="area" d=""/>
+                        <polyline id="chart-line" class="series" points=""/>
+                        <g id="chart-dots" class="dots"></g>
+                    </svg>
+                    <figcaption class="sr-only">최근 30일간의 장애물 탐지 건수를 보여주는 선형 차트입니다.</figcaption>
+                </figure>
+            </div>
+        </section>
+    </div>
+</main>
+
+<th:block id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function() {
+            // 초기 로드 및 주기적 갱신
+            fetchDashboardData();
+            setInterval(fetchDashboardData, 5000); // 5초마다 갱신
+
+            async function fetchDashboardData() {
+                try {
+                    const response = await fetch('/api/admin/dashboard');
+                    if (!response.ok) return;
+                    const data = await response.json(); // DashboardDTO
+
+                    updateKPI(data);
+                    updateTop10(data.topRiskGroups);
+                    updateChart(data.dailyCounts);
+
+                } catch (error) {
+                    console.error("Dashboard update failed:", error);
+                }
+            }
+
+            // KPI 업데이트
+            function updateKPI(data) {
+                document.getElementById('kpi-today').textContent = data.todayCount;
+                document.getElementById('kpi-unprocessed').textContent = data.unprocessedCount;
+            }
+
+            // Top 10 업데이트
+            function updateTop10(list) {
+                const container = document.getElementById('top10-list');
+                if (!list || list.length === 0) {
+                    container.innerHTML = '<li style="text-align:center;color:#999;padding:10px;">위험 장애물이 없습니다.</li>';
+                    return;
+                }
+
+                let html = '';
+                list.forEach(item => {
+                    // item: { groupId, title, score, location, state }
+                    html += `
+                        <li>
+                            <span class="name" title="${item.location}">
+                                ${item.title}
+                            </span>
+                            <span class="score" style="color:${getScoreColor(item.score)}">
+                                ${item.score}
+                            </span>
+                        </li>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+
+            function getScoreColor(score) {
+                if (score >= 80) return '#ef4444'; // Red
+                if (score >= 50) return '#f59e0b'; // Amber
+                return '#10b981'; // Green
+            }
+
+            // 차트 업데이트 (SVG)
+            function updateChart(dailyCounts) {
+                // dailyCounts: 최근 30일 데이터 배열 (예: [0, 5, 2, ...])
+                if (!dailyCounts || dailyCounts.length === 0) return;
+
+                const width = 760;
+                const height = 300;
+                const chartHeight = 216; // 실제 그래프 높이 (280 - 64)
+                const startX = 56;
+                const endX = 720;
+                const startY = 280; // 0점 Y좌표
+
+                // Y축 최대값 계산 (최소 25)
+                const maxVal = Math.max(25, ...dailyCounts);
+
+                // 포인트 좌표 계산
+                // X축 간격: (endX - startX) / (데이터개수 - 1)
+                const stepX = (endX - startX) / (dailyCounts.length - 1);
+
+                let points = "";
+                let dotsHtml = "";
+
+                dailyCounts.forEach((count, index) => {
+                    const x = startX + (index * stepX);
+                    // Y값 계산: count/maxVal 비율만큼 chartHeight에서 뺌
+                    const y = startY - (count / maxVal * chartHeight);
+
+                    points += `${x},${y} `;
+                    dotsHtml += `<circle cx="${x}" cy="${y}" r="3"></circle>`;
+                });
+
+                // 라인 업데이트
+                document.getElementById('chart-line').setAttribute('points', points.trim());
+
+                // 영역(Area) 업데이트 (시작점, 끝점 바닥으로 연결)
+                const areaPath = `M${startX},${startY} L${points.trim().replace(/ /g, ' L')} L${endX},${startY} Z`;
+                document.getElementById('chart-area').setAttribute('d', areaPath);
+
+                // 점(Dots) 업데이트
+                document.getElementById('chart-dots').innerHTML = dotsHtml;
+
+                // TODO: Y축 라벨 업데이트는 생략 (복잡도 감소를 위해 고정값 사용)
+            }
+        })();
+        /*]]>*/
+    </script>
+</th:block>
+
+</body>
+</html>

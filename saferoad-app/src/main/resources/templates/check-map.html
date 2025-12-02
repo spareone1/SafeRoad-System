@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+        pageTitle='장애물 확인 - 지도',
+        bodyClass='state-guest page-check-map bg-gray-50',
+        content=~{::#page-content},
+        styles=~{::#page-styles},
+        scripts=~{::#page-scripts}
+      )}">
+
+<head>
+    <th:block id="page-styles">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: { sans: ['Pretendard', 'sans-serif'] },
+                    },
+                },
+            }
+        </script>
+        <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+
+        <style>
+            #page-content { font-family: 'Pretendard', sans-serif; }
+
+            /* 지도 컨테이너 */
+            #map {
+                width: 100%;
+                height: 600px; /* 모바일/데스크탑 높이 */
+                border-radius: 1rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                overflow: hidden;
+                background-color: #f3f4f6;
+            }
+
+            /* 모달 내 네이버 지도 */
+            #modal-map-view { width: 100%; height: 250px; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
+
+            /* 검색 결과 드롭다운 커스텀 스크롤바 */
+            .search-results::-webkit-scrollbar { width: 6px; }
+            .search-results::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+
+<div id="page-content">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-8 text-center sm:text-left">
+            장애물 위치 확인
+        </h2>
+
+        <div class="relative w-full mb-6 search-container z-30">
+            <div class="relative">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <input type="text" id="map-search-input"
+                       class="block w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-3 leading-5 placeholder-gray-500 focus:border-blue-500 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm shadow-sm transition-shadow"
+                       placeholder="장소 검색 (예: 부산역, 부산광역시청)" autocomplete="off" />
+            </div>
+
+            <div id="search-results" class="absolute mt-1 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden max-h-60 sm:text-sm search-results">
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </section>
+
+    <div class="fixed inset-0 z-[9999] overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" data-modal>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl" data-modal-card>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block id="page-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function () {
+            // --- 지도 및 검색 로직 ---
+            let map = null;
+            let markers = [];
+            let debounceTimer = null;
+
+            if (typeof naver === 'undefined' || !naver.maps) {
+                document.getElementById('map').innerHTML =
+                    '<div class="flex items-center justify-center h-full text-gray-500">네이버 지도를 불러올 수 없습니다.<br>관리자에게 문의하세요.</div>';
+                return;
+            }
+
+            function initMap() {
+                const mapOptions = {
+                    zoom: 15, minZoom: 10, zoomControl: true,
+                    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+                };
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => { createMap(position.coords.latitude, position.coords.longitude, mapOptions); },
+                        (error) => { createMap(35.179554, 129.075642, mapOptions); }
+                    );
+                } else {
+                    createMap(35.179554, 129.075642, mapOptions);
+                }
+            }
+
+            function createMap(lat, lon, options) {
+                const center = new naver.maps.LatLng(lat, lon);
+                map = new naver.maps.Map('map', { ...options, center: center });
+
+                // 내 위치 마커
+                new naver.maps.Marker({
+                    position: center, map: map,
+                    icon: {
+                        content: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
+                        anchor: new naver.maps.Point(8, 8)
+                    }
+                });
+
+                bindMapEvents();
+                fetchMarkersInBounds();
+            }
+
+            function bindMapEvents() {
+                naver.maps.Event.addListener(map, 'idle', function() { fetchMarkersInBounds(); });
+
+                const searchInput = document.getElementById('map-search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function(e) {
+                        const keyword = this.value.trim();
+                        if (debounceTimer) clearTimeout(debounceTimer);
+                        if (keyword.length < 2) { closeSuggestions(); return; }
+                        debounceTimer = setTimeout(() => { fetchSuggestions(keyword); }, 300);
+                    });
+
+                    searchInput.addEventListener('keydown', function(e) {
+                        if (e.isComposing) return;
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            closeSuggestions();
+                            if (this.value.trim()) fetchSuggestions(this.value.trim(), true);
+                        }
+                    });
+
+                    document.addEventListener('click', function(e) {
+                        if (!e.target.closest('.search-container')) closeSuggestions();
+                    });
+                }
+            }
+
+            async function fetchSuggestions(keyword, autoSelectFirst = false) {
+                try {
+                    const response = await fetch(`/api/search/place?query=${encodeURIComponent(keyword)}`);
+                    if (!response.ok) { if (response.status === 401) return; throw new Error('검색 실패'); }
+                    const data = await response.json();
+
+                    if (data.items && data.items.length > 0) {
+                        if (autoSelectFirst) moveMapToItem(data.items[0]);
+                        else renderSuggestions(data.items);
+                    } else {
+                        closeSuggestions();
+                        if (autoSelectFirst) alert('검색 결과가 없습니다.');
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            function renderSuggestions(items) {
+                const resultsBox = document.getElementById('search-results');
+                if (!resultsBox) return;
+
+                let html = '';
+                items.slice(0, 5).forEach(item => {
+                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+                    const cleanTitle = item.title.replace(/<[^>]*>?/gm, '');
+                    const address = item.roadAddress || item.address;
+
+                    html += `
+                        <div class="cursor-pointer hover:bg-gray-100 px-4 py-2 border-b border-gray-100 last:border-0" onclick='selectSuggestion(${itemJson})'>
+                            <div class="font-medium text-gray-900 text-sm">${cleanTitle}</div>
+                            <div class="text-xs text-gray-500 truncate">${address}</div>
+                        </div>
+                    `;
+                });
+
+                resultsBox.innerHTML = html;
+                resultsBox.classList.remove('hidden');
+            }
+
+            function closeSuggestions() {
+                const resultsBox = document.getElementById('search-results');
+                if (resultsBox) {
+                    resultsBox.classList.add('hidden');
+                    resultsBox.innerHTML = '';
+                }
+            }
+
+            window.selectSuggestion = function(item) {
+                const searchInput = document.getElementById('map-search-input');
+                if (searchInput) searchInput.value = item.title.replace(/<[^>]*>?/gm, '');
+                closeSuggestions();
+                moveMapToItem(item);
+            };
+
+            function moveMapToItem(item) {
+                const lat = parseInt(item.mapy, 10) / 10000000;
+                const lng = parseInt(item.mapx, 10) / 10000000;
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const latLng = new naver.maps.LatLng(lat, lng);
+                    map.setCenter(latLng);
+                    map.setZoom(16);
+                    new naver.maps.Marker({ position: latLng, map: map, title: item.title.replace(/<[^>]*>?/gm, '') });
+                } else {
+                    alert('좌표를 변환할 수 없습니다.');
+                }
+            }
+
+            async function fetchMarkersInBounds() {
+                if (!map) return;
+                const bounds = map.getBounds();
+                const sw = bounds.getSW();
+                const ne = bounds.getNE();
+                const query = `minLat=${sw.lat()}&minLon=${sw.lng()}&maxLat=${ne.lat()}&maxLon=${ne.lng()}`;
+
+                try {
+                    const response = await fetch(`/api/obstacle-group/markers?${query}`);
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    updateMarkers(data);
+                } catch (error) { }
+            }
+
+            function updateMarkers(markerDataList) {
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+
+                markerDataList.forEach(data => {
+                    let markerColor = '#ef4444';
+                    if (data.state === 'completed') markerColor = '#10b981';
+                    else if (data.state === 'processing') markerColor = '#eab308';
+
+                    const marker = new naver.maps.Marker({
+                        position: new naver.maps.LatLng(data.lat, data.lon),
+                        map: map,
+                        title: data.obstacleName,
+                        icon: {
+                            content: `<div style="background:${markerColor};width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;"></div>`,
+                            anchor: new naver.maps.Point(10, 10)
+                        }
+                    });
+
+                    naver.maps.Event.addListener(marker, 'click', function() {
+                        openDetailModal(data.groupId);
+                    });
+
+                    markers.push(marker);
+                });
+            }
+
+            // --- 모달 로직 ---
+            const backdrop = document.querySelector('[data-modal]');
+            const cardHost = document.querySelector('[data-modal-card]');
+            let modalMapInstance = null;
+            let lastFocused = null;
+
+            async function openDetailModal(obstacleId) {
+                lastFocused = document.activeElement;
+
+                cardHost.innerHTML = `
+                    <div class="p-10 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
+                        <p class="mt-4 text-gray-500">상세 정보를 불러오는 중...</p>
+                    </div>`;
+                backdrop.classList.remove('hidden');
+
+                try {
+                    const res = await fetch(`/api/obstacle-group/${obstacleId}`);
+                    if(!res.ok) throw new Error('Load failed');
+                    const data = await res.json();
+
+                    renderModalContent(data);
+                    guardAdminFeatures();
+                    bindModalInteractions(obstacleId);
+
+                    document.body.classList.add('overflow-hidden');
+
+                    if(data.obstacles && data.obstacles.length > 0) {
+                        initModalMap(data.obstacles[0].lat, data.obstacles[0].lon);
+                    } else {
+                        initModalMap(35.179554, 129.075642);
+                    }
+                } catch(e) {
+                    console.error(e);
+                    cardHost.innerHTML = `
+                        <div class="p-6 text-center">
+                            <p class="text-red-600 font-medium mb-4">정보를 불러오지 못했습니다.</p>
+                            <button class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" data-modal-close>닫기</button>
+                        </div>`;
+                    bindModalInteractions();
+                }
+            }
+
+            function renderModalContent(data) {
+                const first = (data.obstacles && data.obstacles.length > 0) ? data.obstacles[0] : null;
+                const imageUrl = first ? 'http://alalstkdl123.cafe24.com:15531/' + first.imageloc : '/img/pothole.png';
+                const name = first ? first.obstacleName : '정보 없음';
+                const createdAt = first ? new Date(first.created_at || first.createdAt).toLocaleString('ko-KR') : '-';
+                const stateOpt = (val) => data.state === val ? 'selected' : '';
+
+                let badgeClass, badgeText;
+                if (data.state === 'completed') { badgeClass = 'bg-green-100 text-green-800'; badgeText = '처리 완료'; }
+                else if (data.state === 'processing') { badgeClass = 'bg-yellow-100 text-yellow-800'; badgeText = '처리 중'; }
+                else { badgeClass = 'bg-red-100 text-red-800'; badgeText = '처리 미완료'; }
+
+                cardHost.innerHTML = `
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900" id="m-title">${name}</h3>
+                            <p class="text-sm text-gray-500" id="m-desc">ID: ${data.id} | ${createdAt}</p>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900">위치 정보</h4>
+                            <p class="mt-1 text-sm text-gray-600 bg-gray-50 p-3 rounded-md border border-gray-200">${data.location}</p>
+                        </div>
+                        <div data-admin-feature style="display:none;">
+                            <label class="block text-sm font-medium text-gray-700">처리 상태 변경 (관리자)</label>
+                            <select id="status" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base border focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm">
+                                <option value="non_processed" ${stateOpt('non_processed')}>처리 미완료</option>
+                                <option value="processing" ${stateOpt('processing')}>처리 중</option>
+                                <option value="completed" ${stateOpt('completed')}>처리 완료</option>
+                            </select>
+                        </div>
+                        <div data-user-view>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">처리 상태</h4>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">지도 보기</h4>
+                            <div id="modal-map-view"></div>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">현장 사진</h4>
+                            <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                                <img src="${imageUrl}" class="w-full h-64 object-contain mx-auto" onerror="this.src='https://placehold.co/600x400?text=이미지+없음'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 flex flex-row-reverse gap-3 border-t border-gray-200">
+                        <button type="button" class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 sm:w-auto sm:text-sm" data-save-btn data-admin-feature style="display:none;">변경 사항 저장</button>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm" data-modal-close>닫기</button>
+                    </div>
+                `;
+            }
+
+            function initModalMap(lat, lon) {
+                if (typeof naver === 'undefined' || !naver.maps) return;
+                const opts = {
+                    center: new naver.maps.LatLng(lat, lon),
+                    zoom: 17,
+                    zoomControl: true, zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+                };
+                modalMapInstance = new naver.maps.Map('modal-map-view', opts);
+                new naver.maps.Marker({ position: new naver.maps.LatLng(lat, lon), map: modalMapInstance });
+            }
+
+            function closeDetailModal() {
+                backdrop.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                if (modalMapInstance) {
+                    modalMapInstance.destroy();
+                    modalMapInstance = null;
+                }
+                setTimeout(() => { cardHost.innerHTML = ''; }, 100);
+            }
+
+            function guardAdminFeatures() {
+                const isAdmin = document.body.classList.contains('state-admin');
+                cardHost.querySelectorAll('[data-admin-feature]').forEach(el => el.style.display = isAdmin ? '' : 'none');
+                cardHost.querySelectorAll('[data-user-view]').forEach(el => el.style.display = isAdmin ? 'none' : '');
+            }
+
+            function bindModalInteractions(obstacleId) {
+                const closers = cardHost.querySelectorAll('[data-modal-close]');
+                closers.forEach(el => el.addEventListener('click', closeDetailModal));
+
+                const bgOverlay = backdrop.querySelector('[aria-hidden="true"]');
+                if(bgOverlay) bgOverlay.addEventListener('click', closeDetailModal);
+
+                const saveBtn = cardHost.querySelector('[data-save-btn]');
+                if (saveBtn && obstacleId) {
+                    saveBtn.addEventListener('click', async () => {
+                        const newState = cardHost.querySelector('#status').value;
+                        saveBtn.textContent = "저장 중...";
+                        saveBtn.disabled = true;
+                        try {
+                            const res = await fetch(`/api/obstacle-group/${obstacleId}/state`, {
+                                method: 'PUT',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({state: newState})
+                            });
+                            if (res.ok) {
+                                alert('저장되었습니다.');
+                                closeDetailModal();
+                                fetchMarkersInBounds();
+                            } else {
+                                alert('저장 실패');
+                            }
+                        } catch(e) { console.error(e); alert('오류 발생'); }
+                        finally {
+                            if(saveBtn) { saveBtn.textContent = "변경 사항 저장"; saveBtn.disabled = false; }
+                        }
+                    });
+                }
+            }
+
+            window.addEventListener('keydown', (e) => { if(e.key==='Escape' && !backdrop.classList.contains('hidden')) closeDetailModal(); });
+
+            // 실행
+            initMap();
+
+        })();
+        /*]]>*/
+    </script>
+</th:block>
+
+</body>
+</html>
